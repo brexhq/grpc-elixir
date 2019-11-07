@@ -143,9 +143,10 @@ defmodule GRPC.Adapter.Cowboy do
       ])
 
     idle_timeout = Keyword.get(opts, :idle_timeout, :infinity)
+    server_name = Keyword.get(opts, :server_name, servers_name(endpoint, servers))
 
     [
-      servers_name(endpoint, servers),
+      server_name,
       %{
         num_acceptors: @default_num_acceptors,
         socket_opts: socket_opts(port, opts)
