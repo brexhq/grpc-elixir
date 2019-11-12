@@ -42,6 +42,7 @@ defmodule GRPC.Transport.HTTP2 do
     |> append_accepted_compressors(stream.accepted_compressors)
     |> append_encoding(opts[:grpc_encoding])
     |> append_timeout(opts[:timeout])
+    |> append_stream_metadata(stream)
     |> append_custom_metadata(opts[:metadata])
 
     # TODO: grpc-accept-encoding, grpc-message-type
@@ -101,6 +102,10 @@ defmodule GRPC.Transport.HTTP2 do
   end
 
   defp append_timeout(headers, _), do: headers
+
+  defp append_stream_metadata(headers, %{headers: metadata} = _stream) do
+    Enum.to_list(encode_metadata(metadata)) ++ headers
+  end
 
   defp append_custom_metadata(headers, metadata) when is_map(metadata) or is_list(metadata) do
     Enum.to_list(encode_metadata(metadata)) ++ headers
