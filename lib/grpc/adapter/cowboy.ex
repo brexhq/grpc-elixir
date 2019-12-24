@@ -143,7 +143,11 @@ defmodule GRPC.Adapter.Cowboy do
       ])
 
     idle_timeout = Keyword.get(opts, :idle_timeout, :infinity)
-    server_name = Keyword.get(opts, :server_name, servers_name(endpoint, servers))
+
+    # The default option is small
+    # https://github.com/ninenines/cowboy/issues/1398
+    max_received_frame_rate = Keyword.get(opts, :max_received_frame_rate, {1000_000, 10_000})
+    max_reset_stream_rate = Keyword.get(opts, :max_reset_stream_rate, {1000, 10_000})
 
     [
       server_name,
@@ -151,11 +155,14 @@ defmodule GRPC.Adapter.Cowboy do
         num_acceptors: @default_num_acceptors,
         socket_opts: socket_opts(port, opts)
       },
+      # https://ninenines.eu/docs/en/cowboy/2.7/manual/cowboy_http2/
       %{
         env: %{dispatch: dispatch},
         inactivity_timeout: idle_timeout,
         settings_timeout: idle_timeout,
-        stream_handlers: [:grpc_stream_h]
+        stream_handlers: [:grpc_stream_h],
+        max_received_frame_rate: max_received_frame_rate,
+        max_reset_stream_rate: max_reset_stream_rate
       }
     ]
   end
