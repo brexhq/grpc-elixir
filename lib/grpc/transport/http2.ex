@@ -43,7 +43,11 @@ defmodule GRPC.Transport.HTTP2 do
     |> append_custom_metadata(stream.channel.headers)
     |> append_encoding(opts[:grpc_encoding])
     |> append_timeout(opts[:timeout])
+<<<<<<< HEAD
     |> append_stream_metadata(stream)
+=======
+    |> append_custom_metadata(stream.headers)
+>>>>>>> d6cb207... Allow client interceptor to send headers (#118)
     |> append_custom_metadata(opts[:metadata])
 
     # TODO: grpc-accept-encoding, grpc-message-type
