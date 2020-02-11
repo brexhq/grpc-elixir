@@ -108,22 +108,4 @@ defmodule GRPC.Integration.ServiceTest do
       assert length(notes) == 6
     end)
   end
-
-  test "Bidirectional streaming RPC with infinite timeout does not time out" do
-    run_server(FeatureServer, fn port ->
-      {:ok, channel} = GRPC.Stub.connect("localhost:#{port}")
-      stream = channel |> Routeguide.RouteGuide.Stub.route_chat(timeout: :infinity)
-
-      task =
-        Task.async(fn ->
-          point = Routeguide.Point.new(latitude: 100, longitude: 500)
-          note = Routeguide.RouteNote.new(location: point, message: "Message")
-          Process.sleep(17000)
-          GRPC.Stub.send_request(stream, note, timeout: :infinity)
-        end)
-
-      {:ok, _} = GRPC.Stub.recv(stream)
-      Task.await(task)
-    end)
-  end
 end
