@@ -41,7 +41,7 @@ defmodule GRPC.Integration.ServerTest do
     end
 
     def say_hello(_req, _stream) do
-      raise GRPC.RPCError, status: GRPC.Status.unauthenticated(), message: "Please authenticate"
+      raise GRPC.RPCError, status: GRPC.Status.unauthenticated(), message: "Please authenticate", details: [123]
     end
   end
 
@@ -109,7 +109,8 @@ defmodule GRPC.Integration.ServerTest do
 
       assert %GRPC.RPCError{
                status: GRPC.Status.unauthenticated(),
-               message: "Please authenticate"
+               message: "Please authenticate",
+               details: []
              } == reply
     end)
   end
@@ -120,7 +121,11 @@ defmodule GRPC.Integration.ServerTest do
       req = Helloworld.HelloRequest.new(name: "unknown error")
 
       assert {:error,
-              %GRPC.RPCError{message: "Internal Server Error", status: GRPC.Status.unknown()}} ==
+              %GRPC.RPCError{
+                message: "Internal Server Error",
+                status: GRPC.Status.unknown(),
+                details: []
+              }} ==
                channel |> Helloworld.Greeter.Stub.say_hello(req)
     end)
   end
@@ -129,7 +134,7 @@ defmodule GRPC.Integration.ServerTest do
     run_server([FeatureErrorServer], fn port ->
       {:ok, channel} = GRPC.Stub.connect("localhost:#{port}")
       rect = Routeguide.Rectangle.new()
-      error = %GRPC.RPCError{message: "Please authenticate", status: 16}
+      error = %GRPC.RPCError{message: "Please authenticate", status: 16, details: []}
       assert {:error, ^error} = channel |> Routeguide.RouteGuide.Stub.list_features(rect)
     end)
   end
@@ -148,7 +153,7 @@ defmodule GRPC.Integration.ServerTest do
     run_server([TimeoutServer], fn port ->
       {:ok, channel} = GRPC.Stub.connect("localhost:#{port}")
       rect = Routeguide.Rectangle.new()
-      error = %GRPC.RPCError{message: "Deadline expired", status: 4}
+      error = %GRPC.RPCError{message: "Deadline expired", status: 4, details: []}
 
       assert {:error, ^error} =
                channel |> Routeguide.RouteGuide.Stub.list_features(rect, timeout: 500)
