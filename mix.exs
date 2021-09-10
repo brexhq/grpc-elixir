@@ -43,10 +43,8 @@ defmodule GRPC.Mixfile do
 
     [
       {:protobuf, github: "brexhq/protobuf-elixir", branch: "brex-head"},
-      {:cowboy, "~> 2.7.0"},
-      {:gun, "~> 2.0.0", hex: :grpc_gun},
-      # This is needed in your code
-      # {:cowlib, "~> 2.8.0", hex: :grpc_cowlib, override: true},
+      {:cowboy, "~> 2.9.0"},
+      {:gun, "~> 2.0.0-rc.2"},
       {:ex_doc, ex_doc_version, only: :dev},
       {:inch_ex, "~> 2.0", only: [:dev, :test]},
       {:dialyxir, "~> 1.0.0-rc.7", only: :dev, runtime: false}
