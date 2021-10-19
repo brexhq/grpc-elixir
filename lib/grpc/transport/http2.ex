@@ -12,11 +12,13 @@ defmodule GRPC.Transport.HTTP2 do
     %{"content-type" => "application/grpc+#{codec.name}"}
   end
 
-  @spec server_trailers(integer, String.t()) :: map
-  def server_trailers(status \\ Status.ok(), message \\ "") do
+  @spec server_trailers(integer, String.t(), [any()]) :: map
+  def server_trailers(status \\ Status.ok(), message \\ "", details \\ []) do
+    # TODO: stop assuming details is a list of String.t() only
     %{
       "grpc-status" => Integer.to_string(status),
-      "grpc-message" => message
+      "grpc-message" => message,
+      "grpc-details" => details |> Enum.join(",")
     }
   end
 
