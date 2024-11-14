@@ -40,6 +40,7 @@ defmodule GRPC.Integration.ConnectionTest do
 
   test "authentication works" do
     server = FeatureServer
+    tls_versions = [:"tlsv1.2"]
 
     cred =
       GRPC.Credential.new(
@@ -48,11 +49,13 @@ defmodule GRPC.Integration.ConnectionTest do
           cacertfile: @ca_path,
           keyfile: @key_path,
           verify: :verify_peer,
-          fail_if_no_peer_cert: true
+          fail_if_no_peer_cert: true,
+          versions: tls_versions,
         ]
       )
 
     {:ok, _, port} = GRPC.Server.start(server, 0, cred: cred)
+    IO.inspect(port)
 
     try do
       point = Routeguide.Point.new(latitude: 409_146_138, longitude: -746_188_906)
