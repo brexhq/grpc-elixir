@@ -28,7 +28,7 @@ defmodule GRPC.Service do
     rpc_calls = Module.get_attribute(env.module, :rpc_calls)
 
     quote do
-      def __rpc_calls__, do: unquote(rpc_calls |> Macro.escape() |> Enum.reverse())
+      def __rpc_calls__(), do: unquote(rpc_calls |> Macro.escape() |> Enum.reverse())
     end
   end
 
