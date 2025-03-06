@@ -88,6 +88,64 @@ defmodule GRPC.Integration.ServerTest do
     end
   end
 
+  defmodule RichErrorErrorServer do
+    use GRPC.Server, service: Helloworld.Greeter.Service
+
+    def say_hello(%{name: "string_errors"}, _stream) do
+      raise GRPC.RPCError,
+        status: GRPC.Status.unauthenticated(),
+        message: "string_errors",
+        details: ["hello", "world"]
+    end
+
+    def say_hello(%{name: "number_errors"}, _stream) do
+      raise GRPC.RPCError,
+        status: GRPC.Status.unauthenticated(),
+        message: "number_errors",
+        details: [1, 2, 3, 4, 5]
+    end
+
+    def say_hello(%{name: "rich_errors"}, _stream) do
+      raise GRPC.RPCError,
+        status: GRPC.Status.unauthenticated(),
+        message: "rich_errors",
+        details: [Helloworld.HelloReply.new(message: "hello world")]
+    end
+  end
+
+  test "error details work" do
+    run_server([RichErrorErrorServer], fn port ->
+      {:ok, channel} = GRPC.Stub.connect("localhost:#{port}")
+
+      req = Helloworld.HelloRequest.new(name: "string_errors")
+      {:error, reply} = channel |> Helloworld.Greeter.Stub.say_hello(req)
+
+      assert %GRPC.RPCError{
+               status: GRPC.Status.unauthenticated(),
+               message: "string_errors",
+               details: ["hello", "world"]
+             } == reply
+
+      req = Helloworld.HelloRequest.new(name: "number_errors")
+      {:error, reply} = channel |> Helloworld.Greeter.Stub.say_hello(req)
+
+      assert %GRPC.RPCError{
+               status: GRPC.Status.unauthenticated(),
+               message: "number_errors",
+               details: [1, 2, 3, 4, 5]
+             } == reply
+
+      req = Helloworld.HelloRequest.new(name: "rich_errors")
+      {:error, reply} = channel |> Helloworld.Greeter.Stub.say_hello(req)
+
+      assert %GRPC.RPCError{
+               status: GRPC.Status.unauthenticated(),
+               message: "rich_errors",
+               details: [%Helloworld.HelloReply{message: "hello world"}]
+             } == reply
+    end)
+  end
+
   test "multiple servers works" do
     run_server([FeatureServer, HelloServer], fn port ->
       {:ok, channel} = GRPC.Stub.connect("localhost:#{port}")
@@ -109,7 +167,8 @@ defmodule GRPC.Integration.ServerTest do
 
       assert %GRPC.RPCError{
                status: GRPC.Status.unauthenticated(),
-               message: "Please authenticate"
+               message: "Please authenticate",
+               details: []
              } == reply
     end)
   end
@@ -120,7 +179,11 @@ defmodule GRPC.Integration.ServerTest do
       req = Helloworld.HelloRequest.new(name: "unknown error")
 
       assert {:error,
-              %GRPC.RPCError{message: "Internal Server Error", status: GRPC.Status.unknown()}} ==
+              %GRPC.RPCError{
+                message: "Internal Server Error",
+                status: GRPC.Status.unknown(),
+                details: []
+              }} ==
                channel |> Helloworld.Greeter.Stub.say_hello(req)
     end)
   end
@@ -129,7 +192,7 @@ defmodule GRPC.Integration.ServerTest do
     run_server([FeatureErrorServer], fn port ->
       {:ok, channel} = GRPC.Stub.connect("localhost:#{port}")
       rect = Routeguide.Rectangle.new()
-      error = %GRPC.RPCError{message: "Please authenticate", status: 16}
+      error = %GRPC.RPCError{message: "Please authenticate", status: 16, details: []}
       assert {:error, ^error} = channel |> Routeguide.RouteGuide.Stub.list_features(rect)
     end)
   end
@@ -148,7 +211,7 @@ defmodule GRPC.Integration.ServerTest do
     run_server([TimeoutServer], fn port ->
       {:ok, channel} = GRPC.Stub.connect("localhost:#{port}")
       rect = Routeguide.Rectangle.new()
-      error = %GRPC.RPCError{message: "Deadline expired", status: 4}
+      error = %GRPC.RPCError{message: "Deadline expired", status: 4, details: []}
 
       assert {:error, ^error} =
                channel |> Routeguide.RouteGuide.Stub.list_features(rect, timeout: 500)
