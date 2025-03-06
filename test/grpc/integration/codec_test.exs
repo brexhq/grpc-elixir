@@ -49,7 +49,8 @@ defmodule GRPC.Integration.CodecTest do
 
       assert %GRPC.RPCError{
                status: GRPC.Status.unimplemented(),
-               message: "No codec registered for content-type application/grpc+not-registered"
+               message: "No codec registered for content-type application/grpc+not-registered",
+               details: []
              } == reply
     end)
   end

@@ -196,7 +196,11 @@ defmodule GRPC.Adapter.Gun do
               {:error,
                GRPC.RPCError.exception(
                  String.to_integer(headers["grpc-status"]),
-                 headers["grpc-message"]
+                 headers["grpc-message"],
+                 headers["grpc-details"]
+                 |> String.split(",")
+                 |> Enum.filter(fn x -> x != "" end)
+                 |> Enum.map(&Base.decode64!/1)
                )}
           end
         else
@@ -215,7 +219,11 @@ defmodule GRPC.Adapter.Gun do
             {:error,
              GRPC.RPCError.exception(
                String.to_integer(headers["grpc-status"]),
-               headers["grpc-message"]
+               headers["grpc-message"],
+               headers["grpc-details"]
+               |> String.split(",")
+               |> Enum.filter(fn x -> x != "" end)
+               |> Enum.map(&Base.decode64!/1)
              )}
           else
             {:response, headers, :nofin}

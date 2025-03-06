@@ -501,7 +501,16 @@ defmodule GRPC.Stub do
     if status == GRPC.Status.ok() do
       :ok
     else
-      {:error, %GRPC.RPCError{status: status, message: trailers["grpc-message"]}}
+      {:error,
+       %GRPC.RPCError{
+         status: status,
+         message: trailers["grpc-message"],
+         details:
+           trailers["grpc-details"]
+           |> String.split(",")
+           |> Enum.filter(fn x -> x != "" end)
+           |> Enum.map(&Base.decode64!/1)
+       }}
     end
   end
 

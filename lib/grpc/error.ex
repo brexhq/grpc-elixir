@@ -5,17 +5,18 @@ defmodule GRPC.RPCError do
       # server side
       raise GRPC.RPCError, status: :unknown # preferred
       raise GRPC.RPCError, status: GRPC.Status.unknown, message: "error message"
+      raise GRPC.RPCError, status: GRPC.Status.unknown, details: [Google.Rpc.LocalizedMessage.new!(locale: “en-US”, message: “User friendly string”)]
 
       # client side
       {:error, error} = Your.Stub.unary_call(channel, request)
   """
 
-  defexception [:status, :message]
-  @type t :: %__MODULE__{status: GRPC.Status.t(), message: String.t()}
+  defexception [:status, :message, :details]
+  @type t :: %__MODULE__{status: GRPC.Status.t(), message: String.t(), details: [any()]}
 
   alias GRPC.Status
 
-  @spec exception(Status.t(), String.t()) :: t
+  @spec exception(Status.t(), String.t(), [any()]) :: t
   def new(status) when is_atom(status) do
     exception(status: status)
   end
@@ -23,10 +24,11 @@ defmodule GRPC.RPCError do
   def exception(args) when is_list(args) do
     error = parse_args(args, %__MODULE__{})
 
-    if error.message do
-      error
-    else
-      Map.put(error, :message, status_message(error.status))
+    cond do
+      error.message && error.details -> error
+      error.details -> Map.put(error, :message, status_message(error.status))
+      error.message -> Map.put(error, :details, [])
+      true -> error |> Map.put(:message, status_message(error.status)) |> Map.put(:details, [])
     end
   end
 
@@ -47,12 +49,19 @@ defmodule GRPC.RPCError do
     parse_args(t, acc)
   end
 
-  def exception(status, message) when is_atom(status) do
-    %GRPC.RPCError{status: apply(GRPC.Status, status, []), message: message}
+  defp parse_args([{:details, details} | t], acc) do
+    acc = %{acc | details: details}
+    parse_args(t, acc)
   end
 
-  def exception(status, message) when is_integer(status) do
-    %GRPC.RPCError{status: status, message: message}
+  def exception(status, message, details \\ [])
+
+  def exception(status, message, details) when is_atom(status) do
+    %GRPC.RPCError{status: apply(GRPC.Status, status, []), message: message, details: details}
+  end
+
+  def exception(status, message, details) when is_integer(status) do
+    %GRPC.RPCError{status: status, message: message, details: details}
   end
 
   defp status_message(1), do: "The operation was cancelled (typically by the caller)"

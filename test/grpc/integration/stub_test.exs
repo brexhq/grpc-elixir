@@ -74,7 +74,8 @@ defmodule GRPC.Integration.StubTest do
       assert {:error,
               %GRPC.RPCError{
                 message: "Deadline expired",
-                status: GRPC.Status.deadline_exceeded()
+                status: GRPC.Status.deadline_exceeded(),
+                details: []
               }} == channel |> Helloworld.Greeter.Stub.say_hello(req, timeout: 500)
     end)
   end
